@@ -1,14 +1,18 @@
 package com.sunnyweather.android.ui.weather
 
+import android.content.Context
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.sunnyweather.android.R
@@ -23,7 +27,7 @@ import java.util.*
 
 class WeatherActivity : AppCompatActivity() {
 
-    private lateinit var id: ActivityWeatherBinding
+    public lateinit var id: ActivityWeatherBinding
     private lateinit var now: NowBinding
     private lateinit var fore: ForecastBinding
     private lateinit var life: LifeIndexBinding
@@ -40,6 +44,24 @@ class WeatherActivity : AppCompatActivity() {
         fore = ForecastBinding.bind(id.root)
         life = LifeIndexBinding.bind(id.root)
         setContentView(id.root)
+        // 调用DrawerLayout的openDrawer()方法来打开滑动菜单
+        now.navBtn.setOnClickListener {
+            id.drawerLayout.openDrawer(GravityCompat.START)
+        }
+        // 监听状态
+        id.drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
+            override fun onDrawerStateChanged(newState: Int) {}
+
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+
+            override fun onDrawerOpened(drawerView: View) {}
+
+            override fun onDrawerClosed(drawerView: View) {
+                // 当滑动菜单被隐藏的时候, 同时也要隐藏输入法
+                val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                manager.hideSoftInputFromWindow(drawerView.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
+            }
+        })
         // 从intent中取出经纬度坐标和地区名称, 并赋值到WeatherViewModel的相应变量中
         if (viewModel.locationLng.isEmpty()) {
             viewModel.locationLng = intent.getStringExtra("location_lng") ?: ""
@@ -60,7 +82,28 @@ class WeatherActivity : AppCompatActivity() {
                 result.exceptionOrNull()?.printStackTrace()
             }
         })
-        viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat) // 执行刷新天气请求
+        refreshWeather()
+        viewModel.weatherLiveData.observe(this, Observer { result ->
+            val weather = result.getOrNull()
+            if (weather != null) {
+                showWeatherInfo(weather)
+            } else {
+                Toast.makeText(this, "无法成功获取天气信息", Toast.LENGTH_SHORT).show()
+                result.exceptionOrNull()?.printStackTrace()
+            }
+            id.swipeRefresh.isRefreshing = false
+        })
+        refreshWeather()
+        // 给下拉刷新设置监听器
+        id.swipeRefresh.setOnRefreshListener {
+            refreshWeather()
+        }
+    }
+
+    fun refreshWeather() {
+        // 下拉刷新
+        viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)
+        id.swipeRefresh.isRefreshing = true
     }
 
     // 从Weather对象中获取数据
