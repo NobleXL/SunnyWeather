@@ -24,8 +24,7 @@ import kotlin.math.log
 
 class PlaceFragment : Fragment() {
 
-    private lateinit var _id: FragmentPlaceBinding
-    private val id get() = _id!!
+    private lateinit var id: FragmentPlaceBinding
 
     val viewModel by lazy { ViewModelProvider(this).get(PlaceViewModel::class.java) }  // 使用lazy函数, 懒加载技术来获取PlaceViewMode实例
 
@@ -37,7 +36,7 @@ class PlaceFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        _id = FragmentPlaceBinding.inflate(inflater, container, false)
+        id = FragmentPlaceBinding.inflate(inflater, container, false)
         return id.root
     }
 
@@ -56,10 +55,10 @@ class PlaceFragment : Fragment() {
             return
         }
         val layoutManager = LinearLayoutManager(activity)
-        _id.recyclerView.layoutManager = layoutManager      // 设置LayoutManager
+        id.recyclerView.layoutManager = layoutManager      // 设置LayoutManager
         adapter = PlaceAdapter(this, viewModel.placeList)   //使用placeList集合作为数据源
-        _id.recyclerView.adapter = adapter          // 设置适配器
-        _id.searchPlaceEdit.addTextChangedListener { editable ->     //动态监听搜索框
+        id.recyclerView.adapter = adapter          // 设置适配器
+        id.searchPlaceEdit.addTextChangedListener { editable ->     //动态监听搜索框
             val content = editable.toString()
             if (content.isNotEmpty()) {
                 viewModel.searchPlaces(content)
